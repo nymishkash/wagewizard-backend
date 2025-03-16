@@ -3,16 +3,29 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^11.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "openai": "^4.87.3"
+    "jsonwebtoken": "^9.0.2",
+    "jwt-simple": "^0.5.6",
+    "libsql": "^0.5.0",
+    "libsql-client": "^0.6.3",
+    "nodemon": "^3.1.9",
+    "openai": "^4.87.3",
+    "prettier": "^3.5.3",
+    "sqlite3": "^5.1.7",
+    "uuid": "^11.1.0"
   }
 }
