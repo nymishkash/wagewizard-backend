@@ -20,10 +20,10 @@ module.exports = (sequelize) => {
       },
       chatText: {
         type: DataTypes.TEXT,
-        allowNull: false,
+        allowNull: true,
       },
       chatUser: {
-        type: DataTypes.ENUM("bot", "hr"),
+        type: DataTypes.ENUM("bot", "user"),
         allowNull: false,
       },
       meta: {
