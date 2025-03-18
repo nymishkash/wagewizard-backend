@@ -33,6 +33,10 @@ router.post("/signup", async (req, res) => {
     }
     console.error("Signup error:", err);
     res.status(500).json({ error: "Server error" });
+  } finally {
+    if (!res.headersSent) {
+      res.redirect("/login");
+    }
   }
 });
 
@@ -49,7 +53,7 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET);
 
-    res.json({ token, userId: user.id, companyId: company.id });
+    res.json({ token, userId: user.id, email: user.email, companyId: company.id });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

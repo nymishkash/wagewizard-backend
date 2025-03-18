@@ -14,6 +14,7 @@ const sequelize = new Sequelize(dbconfig.database, dbconfig.username, dbconfig.p
   host: dbconfig.host,
   dialect: dbconfig.dialect,
   port: dbconfig.port,
+  logging: false,
 });
 
 const User = UserModel(sequelize);

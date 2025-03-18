@@ -23,7 +23,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       chatUser: {
-        type: DataTypes.ENUM("bot", "user"),
+        type: DataTypes.ENUM("assistant", "user", "tool"),
         allowNull: false,
       },
       meta: {

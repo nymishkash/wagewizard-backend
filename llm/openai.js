@@ -4,7 +4,6 @@ const { v4: uuidv4 } = require("uuid");
 const eventService = require("../config/redis");
 const { default: tools } = require("./tools");
 
-
 class OpenAIService {
   constructor(companyId, userId, conversationId = null) {
     this.companyId = companyId;
@@ -48,10 +47,16 @@ class OpenAIService {
         order: [["createdAt", "ASC"]],
       });
 
-      const messages = previousMessages.map((msg) => ({
-        role: msg.chatUser,
-        content: msg.chatText,
-      }));
+      const messages = [
+        {
+          role: "system",
+          content: "you are a helpful assistant who manages the payroll for your company",
+        },
+        ...previousMessages.map((msg) => ({
+          role: msg.chatUser,
+          content: msg.chatText,
+        })),
+      ];
 
       const completion = await this.openai.chat.completions.create({
         model: "gpt-4o",
@@ -80,10 +85,16 @@ class OpenAIService {
           order: [["createdAt", "ASC"]],
         });
 
-        const newHistory = updatedMessages.map((msg) => ({
-          role: msg.chatUser,
-          content: msg.chatText,
-        }));
+        const newHistory = [
+          {
+            role: "system",
+            content: "you are a helpful assistant who manages the payroll for your company",
+          },
+          ...updatedMessages.map((msg) => ({
+            role: msg.chatUser,
+            content: msg.chatText,
+          })),
+        ];
 
         // Generate final answer using the new history
         const finalCompletion = await this.openai.chat.completions.create({
@@ -98,7 +109,7 @@ class OpenAIService {
         await Message.create({
           conversationId: this.conversationId,
           chatText: finalResponseMessage,
-          chatUser: "bot",
+          chatUser: "assistant",
           meta: JSON.stringify({ toolCalls: this.toolCalls }),
         });
         await eventService.publish("response_v1", {
@@ -110,7 +121,7 @@ class OpenAIService {
         await Message.create({
           conversationId: this.conversationId,
           chatText: responseMessage.content,
-          chatUser: "bot",
+          chatUser: "assistant",
           meta: JSON.stringify({ toolCalls: this.toolCalls }),
         });
 
@@ -156,7 +167,7 @@ class OpenAIService {
       await Message.create({
         conversationId: this.conversationId,
         chatText: finalAnswer,
-        chatUser: "bot",
+        chatUser: "assistant",
         meta: JSON.stringify({ toolCalls: this.toolCalls }),
       });
     } catch (error) {

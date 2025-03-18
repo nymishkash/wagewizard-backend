@@ -33,7 +33,7 @@ app.post("/api/chat", async (req, res) => {
       userId: null, // Set userId as needed
       companyId: companyId,
       chatText: response,
-      chatUser: "bot",
+      chatUser: "assistant",
       meta: JSON.stringify({ conversationId }),
     });
 
