@@ -96,16 +96,16 @@ router.post("/all", async (req, res) => {
           where: {
             conversationId: conversation.id,
             chatUser: {
-              [Sequelize.Op.ne]: "tool"
-            }
+              [Sequelize.Op.ne]: "tool",
+            },
           },
           order: [["createdAt", "DESC"]],
-          attributes: ["chatUser", "chatText", "createdAt"]
+          attributes: ["chatUser", "chatText", "createdAt"],
         });
 
         return {
           id: conversation.id,
-          lastMessage: lastMessage || null
+          lastMessage: lastMessage || null,
         };
       })
     );
@@ -134,6 +134,32 @@ router.post("/create", async (req, res) => {
   } catch (error) {
     console.error("Error creating conversation:", error);
     res.status(500).json({ error: "An error occurred while creating conversation." });
+  }
+});
+
+router.get("/:conversationId/messages", async (req, res) => {
+  const { conversationId } = req.params;
+
+  if (!conversationId) {
+    return res.status(400).json({ error: "Conversation ID is required." });
+  }
+
+  try {
+    const messages = await Message.findAll({
+      where: {
+        conversationId,
+        chatUser: {
+          [Sequelize.Op.in]: ["assistant", "user"],
+        },
+      },
+      order: [["createdAt", "ASC"]],
+      attributes: ["id", "chatText", "chatUser", "createdAt"],
+    });
+
+    res.status(200).json({ messages });
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "An error occurred while fetching messages." });
   }
 });
 
