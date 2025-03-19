@@ -13,6 +13,7 @@ app.use(cors());
 // Routes
 app.use("/auth", require("./routes/auth"));
 app.use("/conversations", require("./routes/conversation"));
+app.use("/sse/", require("./routes/sse"));
 
 // New route for generating responses
 app.post("/api/chat", async (req, res) => {
