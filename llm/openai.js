@@ -11,11 +11,16 @@ const tools = [
     type: "function",
     function: {
       name: "getAllEmployees",
-      description: "Fetch all employees for a given company.",
+      description:
+        "Fetch all employees for a given company. Returns a list of employee records with their basic information.",
       parameters: {
         type: "object",
         properties: {
-          companyId: { type: "string" },
+          companyId: {
+            type: "string",
+            description:
+              "The unique identifier of the company whose employees should be retrieved. This is typically a UUID.",
+          },
         },
         required: ["companyId"],
       },
@@ -25,11 +30,16 @@ const tools = [
     type: "function",
     function: {
       name: "getEmployeeDetails",
-      description: "Fetch details of a specific employee.",
+      description:
+        "Fetch comprehensive details of a specific employee including personal information, job details, salary information, and employment history.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose details should be retrieved. This is typically a UUID.",
+          },
         },
         required: ["employeeId"],
       },
@@ -39,12 +49,21 @@ const tools = [
     type: "function",
     function: {
       name: "updateEmployee",
-      description: "Update details of an employee.",
+      description:
+        "Update specific details of an employee record. This can include personal information, job details, or other employee attributes.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          updates: { type: "object" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose information should be updated. This is typically a UUID.",
+          },
+          updates: {
+            type: "object",
+            description:
+              "An object containing the fields to update and their new values. Can include name, email, phone, designation, department, etc.",
+          },
         },
         required: ["employeeId", "updates"],
       },
@@ -54,11 +73,16 @@ const tools = [
     type: "function",
     function: {
       name: "getLeaveRecords",
-      description: "Fetch all leave records of an employee.",
+      description:
+        "Fetch all leave records of an employee, including approved, pending, and rejected leave requests with their respective dates and types.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose leave records should be retrieved. This is typically a UUID.",
+          },
         },
         required: ["employeeId"],
       },
@@ -68,13 +92,26 @@ const tools = [
     type: "function",
     function: {
       name: "markLeave",
-      description: "Mark a specific date as leave for an employee.",
+      description:
+        "Mark a specific date as leave for an employee. This creates a new leave record with the specified date and type.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          date: { type: "string", format: "date" },
-          type: { type: "string" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee for whom the leave should be marked. This is typically a UUID.",
+          },
+          date: {
+            type: "string",
+            format: "date",
+            description: "The date for which leave should be marked in YYYY-MM-DD format.",
+          },
+          type: {
+            type: "string",
+            description:
+              "The type of leave being requested, such as 'sick', 'vacation', 'personal', 'maternity', etc.",
+          },
         },
         required: ["employeeId", "date", "type"],
       },
@@ -84,12 +121,21 @@ const tools = [
     type: "function",
     function: {
       name: "removeLeave",
-      description: "Remove a leave record for an employee.",
+      description:
+        "Remove a previously marked leave record for an employee on a specific date. This completely deletes the leave entry.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          date: { type: "string", format: "date" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose leave record should be removed. This is typically a UUID.",
+          },
+          date: {
+            type: "string",
+            format: "date",
+            description: "The date of the leave record to be removed in YYYY-MM-DD format.",
+          },
         },
         required: ["employeeId", "date"],
       },
@@ -99,13 +145,28 @@ const tools = [
     type: "function",
     function: {
       name: "getEmployeeAttendance",
-      description: "Fetch attendance records of an employee within a date range.",
+      description:
+        "Fetch attendance records of an employee within a specified date range, showing present days, absences, and leave days.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          startDate: { type: "string", format: "date" },
-          endDate: { type: "string", format: "date" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose attendance records should be retrieved. This is typically a UUID.",
+          },
+          startDate: {
+            type: "string",
+            format: "date",
+            description:
+              "The start date of the period for which attendance records should be retrieved in YYYY-MM-DD format.",
+          },
+          endDate: {
+            type: "string",
+            format: "date",
+            description:
+              "The end date of the period for which attendance records should be retrieved in YYYY-MM-DD format.",
+          },
         },
         required: ["employeeId", "startDate", "endDate"],
       },
@@ -115,12 +176,21 @@ const tools = [
     type: "function",
     function: {
       name: "updateDesignation",
-      description: "Update the designation of an employee.",
+      description:
+        "Update the job designation or title of an employee. This is typically used for promotions or role changes.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          newDesignation: { type: "string" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose designation should be updated. This is typically a UUID.",
+          },
+          newDesignation: {
+            type: "string",
+            description:
+              "The new job title or designation for the employee, such as 'Senior Developer', 'Team Lead', 'Manager', etc.",
+          },
         },
         required: ["employeeId", "newDesignation"],
       },
@@ -130,15 +200,47 @@ const tools = [
     type: "function",
     function: {
       name: "adjustSalary",
-      description: "Adjust the salary components of an employee.",
+      description:
+        "Adjust the salary components of an employee, including base pay and other compensation elements. Used for raises, bonuses, or compensation adjustments.",
       parameters: {
         type: "object",
         properties: {
-          employeeId: { type: "string" },
-          newBasePay: { type: "number" },
-          newOtherPay: { type: "number" },
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose salary should be adjusted. This is typically a UUID.",
+          },
+          newBasePay: {
+            type: "number",
+            description:
+              "The new base salary amount for the employee, typically represented as an annual figure.",
+          },
+          newOtherPay: {
+            type: "number",
+            description:
+              "The new amount for additional compensation components such as bonuses, allowances, or other benefits.",
+          },
         },
         required: ["employeeId", "newBasePay", "newOtherPay"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "searchEmployeesByName",
+      description:
+        "Search for employees by name with fuzzy matching to handle typos, misspellings, and name variations. Returns matching employee records.",
+      parameters: {
+        type: "object",
+        properties: {
+          searchTerm: {
+            type: "string",
+            description:
+              "The name or partial name to search for. The search is case-insensitive and uses fuzzy matching to find similar names.",
+          },
+        },
+        required: ["searchTerm"],
       },
     },
   },
