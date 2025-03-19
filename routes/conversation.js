@@ -2,6 +2,7 @@ const express = require("express");
 const eventService = require("../config/redis");
 const OpenAIService = require("../llm/openai");
 const { Conversation, Message, Sequelize } = require("../models");
+const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get("/:conversationId", (req, res) => {
   });
 });
 
-router.post("/send", async (req, res) => {
+router.post("/send", authenticateToken, async (req, res) => {
   const { payload } = req.body;
 
   if (!payload) {
@@ -77,7 +78,7 @@ router.post("/send", async (req, res) => {
   }
 });
 
-router.post("/all", async (req, res) => {
+router.post("/all", authenticateToken, async (req, res) => {
   const { companyId } = req.body;
 
   if (!companyId) {
@@ -117,7 +118,7 @@ router.post("/all", async (req, res) => {
   }
 });
 
-router.post("/create", async (req, res) => {
+router.post("/create", authenticateToken, async (req, res) => {
   const { companyId } = req.body;
 
   if (!companyId) {
@@ -137,7 +138,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-router.get("/:conversationId/messages", async (req, res) => {
+router.get("/:conversationId/messages", authenticateToken, async (req, res) => {
   const { conversationId } = req.params;
 
   if (!conversationId) {
