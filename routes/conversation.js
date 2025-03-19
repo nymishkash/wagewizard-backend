@@ -88,7 +88,7 @@ router.post("/all", authenticateToken, async (req, res) => {
   try {
     const conversations = await Conversation.findAll({
       where: { companyId },
-      attributes: ["id"],
+      attributes: ["id", "createdAt"],
     });
 
     const conversationsWithMessages = await Promise.all(
@@ -106,6 +106,7 @@ router.post("/all", authenticateToken, async (req, res) => {
 
         return {
           id: conversation.id,
+          createdAt: conversation.createdAt,
           lastMessage: lastMessage || null,
         };
       })
