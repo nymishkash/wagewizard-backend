@@ -247,7 +247,7 @@ const tools = [
 ];
 
 class OpenAIService {
-  constructor(companyId, userId, conversationId = null) {
+  constructor(companyId, userId, conversationId) {
     this.companyId = companyId;
     this.userId = userId;
     this.conversationId = conversationId;
@@ -271,6 +271,12 @@ class OpenAIService {
       console.error("Invalid payload:", payload);
       return;
     }
+
+    const userMessage = await Message.create({
+      conversationId,
+      chatUser: "user",
+      chatText: message,
+    });
 
     try {
       // Fetch conversation history

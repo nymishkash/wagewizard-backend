@@ -15,35 +15,11 @@ router.post("/send", authenticateToken, async (req, res) => {
 
   const { userMessage, userId, companyId, conversationId } = payload;
 
-  let finalConversationId = conversationId;
-
-  if (!finalConversationId) {
-    try {
-      const conversation = await Conversation.create({
-        companyId,
-      });
-      finalConversationId = conversation.id;
-    } catch (error) {
-      console.error("Error creating new conversation:", error);
-      return res
-        .status(500)
-        .json({ error: "An error occurred while creating a new conversation." });
-    }
-  }
-
-  const openaiService = new OpenAIService(companyId, userId, finalConversationId);
-
-  const message = await Message.create({
-    conversationId,
-    chatUser: "user",
-    chatText: userMessage,
-  });
-
-  eventService.publish("message_v1", { conversationId, chatText: userMessage });
+  const openaiService = new OpenAIService(companyId, userId, conversationId);
 
   try {
     await openaiService.handleIncomingMessage({
-      conversationId: finalConversationId,
+      conversationId: conversationId,
       message: userMessage,
     });
     res.status(200).json({ message: "Message processed successfully." });

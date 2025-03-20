@@ -15,36 +15,6 @@ app.use("/auth", require("./routes/auth"));
 app.use("/conversations", require("./routes/conversation"));
 app.use("/sse/", require("./routes/sse"));
 
-// New route for generating responses
-app.post("/api/chat", async (req, res) => {
-  const { question, companyId, conversationId, userId } = req.body;
-
-  if (!question || !companyId || !userId) {
-    return res.status(400).json({ error: "Question, companyId, and userId are required." });
-  }
-
-  try {
-    const openAIService = new OpenAIService(companyId, userId, conversationId); // Pass conversationId directly
-    await openAIService.init();
-
-    const response = await openAIService.reply(question); // No need for conditional check
-
-    // Store the message in the database
-    await Message.create({
-      userId: null, // Set userId as needed
-      companyId: companyId,
-      chatText: response,
-      chatUser: "assistant",
-      meta: JSON.stringify({ conversationId }),
-    });
-
-    return res.json({ response });
-  } catch (error) {
-    console.error("Error generating response:", error);
-    return res.status(500).json({ error: "An error occurred while generating the response." });
-  }
-});
-
 // Database initialization and server start
 const PORT = process.env.PORT || 8081;
 
