@@ -1,56 +1,88 @@
 const express = require("express");
 const router = express.Router();
-const { User } = require("../models");
+const { Employee } = require("../models");
+const { authenticateToken } = require("../middleware/auth");
 
 /**
- * @route POST /api/employee
+ * @route POST /api/employees/all
+ * @desc Get all employees for a company with optional search
+ * @access Private
+ */
+router.post("/all", authenticateToken, async (req, res) => {
+  try {
+    const { companyId, search } = req.body;
+
+    if (!companyId) {
+      return res.status(400).json({ message: "Company ID is required" });
+    }
+
+    let employees;
+
+    if (search && search.trim() !== "") {
+      const searchTerm = search.toLowerCase();
+
+      employees = await Employee.findAll({
+        where: { companyId },
+      });
+
+      employees = employees.filter((employee) => {
+        const fullName = `${employee.firstname} ${employee.lastname}`.toLowerCase();
+        return (
+          fullName.includes(searchTerm) ||
+          employee.firstname.toLowerCase().includes(searchTerm) ||
+          employee.lastname.toLowerCase().includes(searchTerm)
+        );
+      });
+    } else {
+      employees = await Employee.findAll({
+        where: { companyId },
+      });
+    }
+
+    employees.sort((a, b) => {
+      const firstNameComparison = a.firstname.localeCompare(b.firstname);
+      if (firstNameComparison === 0) {
+        return a.lastname.localeCompare(b.lastname);
+      }
+      return firstNameComparison;
+    });
+
+    res.status(200).json({
+      success: true,
+      employees: employees.map((emp) => emp.toJSON()),
+    });
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/employees/create
  * @desc Create a new employee
  * @access Private
  */
-router.post("/", authenticateToken, async (req, res) => {
+router.post("/create", authenticateToken, async (req, res) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      designation,
-      department,
-      basePay,
-      otherPay,
-      joiningDate,
-      companyId,
-    } = req.body;
+    const { firstname, lastname, designation, base_pay, other_pay, doj, companyId } = req.body;
 
-    // Validate required fields
-    if (!firstName || !lastName || !email || !designation || !companyId) {
+    if (!firstname || !lastname || !designation || !companyId) {
       return res.status(400).json({ message: "Please provide all required fields" });
     }
 
-    // Check if employee with email already exists
-    const existingEmployee = await User.findOne({ where: { email } });
-    if (existingEmployee) {
-      return res.status(400).json({ message: "Employee with this email already exists" });
-    }
-
-    // Create new employee
-    const newEmployee = await User.create({
-      firstName,
-      lastName,
-      email,
-      phone,
+    const newEmployee = await Employee.create({
+      firstname,
+      lastname,
       designation,
-      department,
-      basePay: basePay || 0,
-      otherPay: otherPay || 0,
-      joiningDate: joiningDate || new Date(),
+      base_pay: base_pay || 0,
+      other_pay: other_pay || 0,
+      doj: doj || new Date(),
       companyId,
-      role: "employee",
     });
 
     res.status(201).json({
       success: true,
-      data: newEmployee,
+      employee: newEmployee.toJSON(),
     });
   } catch (error) {
     console.error("Error creating employee:", error);
@@ -59,32 +91,33 @@ router.post("/", authenticateToken, async (req, res) => {
 });
 
 /**
- * @route PUT /api/employee/:id
+ * @route POST /api/employees/update
  * @desc Update employee details
  * @access Private
  */
-router.put("/:id", authenticateToken, async (req, res) => {
+router.post("/update", authenticateToken, async (req, res) => {
   try {
-    const employeeId = req.params.id;
-    const updates = req.body;
+    const { employeeId, firstname, lastname, designation, base_pay, other_pay, doj } = req.body;
 
     // Find the employee
-    const employee = await User.findByPk(employeeId);
+    const employee = await Employee.findByPk(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Check if user has permission (admin or same company)
-    if (req.user.role !== "admin" && req.user.companyId !== employee.companyId) {
-      return res.status(403).json({ message: "Not authorized to update this employee" });
-    }
-
     // Update employee
-    await employee.update(updates);
+    await employee.update({
+      firstname: firstname || employee.firstname,
+      lastname: lastname || employee.lastname,
+      designation: designation || employee.designation,
+      base_pay: base_pay !== undefined ? base_pay : employee.base_pay,
+      other_pay: other_pay !== undefined ? other_pay : employee.other_pay,
+      doj: doj || employee.doj,
+    });
 
     res.status(200).json({
       success: true,
-      data: employee,
+      employee: employee.toJSON(),
     });
   } catch (error) {
     console.error("Error updating employee:", error);
@@ -93,62 +126,53 @@ router.put("/:id", authenticateToken, async (req, res) => {
 });
 
 /**
- * @route GET /api/employee/:id
- * @desc Get employee details
+ * @route POST /api/employees/delete
+ * @desc Delete an employee
+ * @access Private
+ */
+router.post("/delete", authenticateToken, async (req, res) => {
+  try {
+    const { employeeId } = req.body;
+
+    // Find the employee
+    const employee = await Employee.findByPk(employeeId);
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Delete employee
+    await employee.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Employee deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/employees/:id
+ * @desc Get employee details by ID
  * @access Private
  */
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const employeeId = req.params.id;
 
-    const employee = await User.findByPk(employeeId);
+    const employee = await Employee.findByPk(employeeId);
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Check if user has permission
-    if (req.user.role !== "admin" && req.user.companyId !== employee.companyId) {
-      return res.status(403).json({ message: "Not authorized to view this employee" });
-    }
-
     res.status(200).json({
       success: true,
-      data: employee,
+      employee: employee.toJSON(),
     });
   } catch (error) {
     console.error("Error fetching employee:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-/**
- * @route GET /api/employee/company/:companyId
- * @desc Get all employees for a company
- * @access Private
- */
-router.get("/company/:companyId", authenticateToken, async (req, res) => {
-  try {
-    const { companyId } = req.params;
-
-    // Check if user has permission
-    if (req.user.role !== "admin" && req.user.companyId !== companyId) {
-      return res.status(403).json({ message: "Not authorized to view these employees" });
-    }
-
-    const employees = await User.findAll({
-      where: {
-        companyId,
-        role: "employee",
-      },
-    });
-
-    res.status(200).json({
-      success: true,
-      count: employees.length,
-      data: employees,
-    });
-  } catch (error) {
-    console.error("Error fetching employees:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });

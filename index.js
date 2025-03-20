@@ -14,6 +14,7 @@ app.use(cors());
 app.use("/auth", require("./routes/auth"));
 app.use("/conversations", require("./routes/conversation"));
 app.use("/sse/", require("./routes/sse"));
+app.use("/employees/", require("./routes/employee"));
 
 // Database initialization and server start
 const PORT = process.env.PORT || 8081;
