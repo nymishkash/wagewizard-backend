@@ -4,7 +4,6 @@ const { v4: uuidv4, validate: validateUuid } = require("uuid");
 
 async function getAllEmployees(args) {
   const { companyId } = args;
-  // Format to UUID regardless of input format
   const formattedCompanyId = String(companyId);
   const employees = await Employee.findAll({ where: { companyId: formattedCompanyId } });
   return employees.map((emp) => emp.toJSON());
@@ -12,7 +11,6 @@ async function getAllEmployees(args) {
 
 async function getEmployeeDetails(args) {
   const { employeeId } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const employee = await Employee.findByPk(formattedEmployeeId);
   if (!employee) throw new Error("Employee not found");
@@ -21,7 +19,6 @@ async function getEmployeeDetails(args) {
 
 async function updateEmployee(args) {
   const { employeeId, updates } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const employee = await Employee.findByPk(formattedEmployeeId);
   if (!employee) throw new Error("Employee not found");
@@ -31,7 +28,6 @@ async function updateEmployee(args) {
 
 async function getLeaveRecords(args) {
   const { employeeId } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const leaves = await Leave.findAll({ where: { employeeId: formattedEmployeeId } });
   return leaves.map((leave) => leave.toJSON());
@@ -40,7 +36,6 @@ async function getLeaveRecords(args) {
 async function markLeave(args) {
   const { employeeId, date, type } = args;
   if (!employeeId || !date || !type) throw new Error("All fields are required");
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const leave = await Leave.create({ employeeId: formattedEmployeeId, date, type });
   return leave.toJSON();
@@ -48,7 +43,6 @@ async function markLeave(args) {
 
 async function removeLeave(args) {
   const { employeeId, date } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const leave = await Leave.findOne({ where: { employeeId: formattedEmployeeId, date } });
   if (!leave) throw new Error("No leave record found for this date");
@@ -58,7 +52,6 @@ async function removeLeave(args) {
 
 async function getEmployeeAttendance(args) {
   const { employeeId, startDate, endDate } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const leaves = await Leave.findAll({
     where: {
@@ -71,7 +64,6 @@ async function getEmployeeAttendance(args) {
 
 async function updateDesignation(args) {
   const { employeeId, newDesignation } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const employee = await Employee.findByPk(formattedEmployeeId);
   if (!employee) throw new Error("Employee not found");
@@ -81,7 +73,6 @@ async function updateDesignation(args) {
 
 async function adjustSalary(args) {
   const { employeeId, newBasePay, newOtherPay } = args;
-  // Format to UUID regardless of input format
   const formattedEmployeeId = String(employeeId);
   const employee = await Employee.findByPk(formattedEmployeeId);
   if (!employee) throw new Error("Employee not found");
@@ -96,31 +87,24 @@ async function searchEmployeesByName(args) {
     throw new Error("Search term is required and must be a string");
   }
 
-  // Get all employees first
   const allEmployees = await Employee.findAll({
     attributes: ["id", "firstname", "lastname", "designation", "companyId"],
   });
 
-  // Convert search term to lowercase for case-insensitive comparison
   const normalizedSearchTerm = searchTerm.toLowerCase();
 
-  // Filter employees with various matching strategies
   const matchingEmployees = allEmployees.filter((employee) => {
-    // Combine first and last name for full name search
     const employeeName = `${employee.firstname} ${employee.lastname}`.toLowerCase();
 
-    // Direct substring match
     if (employeeName.includes(normalizedSearchTerm)) {
       return true;
     }
 
-    // Also check first name and last name separately
     if (employee.firstname.toLowerCase().includes(normalizedSearchTerm) || 
         employee.lastname.toLowerCase().includes(normalizedSearchTerm)) {
       return true;
     }
 
-    // Handle common character substitutions (like 'i' for 'ee', 'k' for 'c', etc.)
     const searchWithSubstitutions = normalizedSearchTerm
       .replace(/ee/g, "i")
       .replace(/i/g, "ee")
@@ -133,8 +117,6 @@ async function searchEmployeesByName(args) {
       return true;
     }
 
-    // Calculate Levenshtein distance for fuzzy matching
-    // This helps match names with typos or slight variations
     const maxDistance = Math.max(2, Math.floor(normalizedSearchTerm.length / 3));
     const distance = levenshteinDistance(employeeName, normalizedSearchTerm);
 
@@ -144,17 +126,14 @@ async function searchEmployeesByName(args) {
   return matchingEmployees.map((employee) => employee.toJSON());
 }
 
-// Helper function to calculate Levenshtein distance between two strings
 function levenshteinDistance(str1, str2) {
   const m = str1.length;
   const n = str2.length;
 
-  // Create a matrix of size (m+1) x (n+1)
   const dp = Array(m + 1)
     .fill()
     .map(() => Array(n + 1).fill(0));
 
-  // Initialize the matrix
   for (let i = 0; i <= m; i++) {
     dp[i][0] = i;
   }
@@ -163,14 +142,13 @@ function levenshteinDistance(str1, str2) {
     dp[0][j] = j;
   }
 
-  // Fill the matrix
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
       dp[i][j] = Math.min(
-        dp[i - 1][j] + 1, // deletion
-        dp[i][j - 1] + 1, // insertion
-        dp[i - 1][j - 1] + cost // substitution
+        dp[i - 1][j] + 1, 
+        dp[i][j - 1] + 1, 
+        dp[i - 1][j - 1] + cost 
       );
     }
   }

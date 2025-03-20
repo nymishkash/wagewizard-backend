@@ -13,13 +13,12 @@ router.get("/:conversationId", (req, res) => {
 
   console.log(`Client connected for conversation ${conversationId}`);
 
-  // Send an initial event so the client knows the connection is open
+  // init
   res.write(`data: ${JSON.stringify({ message: "Connection established" })}\n\n`);
 
   const subscriber = eventService.subscribe((eventType, data) => {
     console.log(`Received event: ${eventType}`, data);
 
-    // Ensure the correct SSE format
     res.write(`data: ${JSON.stringify({ eventType, data })}\n\n`);
   });
 

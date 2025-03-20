@@ -29,9 +29,6 @@ async function initdb() {
     // await sequelize.sync({ force: true, alter: true });
     // console.log("Database tables synchronized.");
 
-    // Check if Users table has any records
-    const userCount = await User.count(); // Now User should be defined
-    console.log(`Current user count: ${userCount}`);
   } catch (error) {
     console.error("Database initialization error:", error);
     throw error;
