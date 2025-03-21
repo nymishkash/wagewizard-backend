@@ -100,8 +100,10 @@ async function searchEmployeesByName(args) {
       return true;
     }
 
-    if (employee.firstname.toLowerCase().includes(normalizedSearchTerm) || 
-        employee.lastname.toLowerCase().includes(normalizedSearchTerm)) {
+    if (
+      employee.firstname.toLowerCase().includes(normalizedSearchTerm) ||
+      employee.lastname.toLowerCase().includes(normalizedSearchTerm)
+    ) {
       return true;
     }
 
@@ -145,15 +147,70 @@ function levenshteinDistance(str1, str2) {
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1, 
-        dp[i][j - 1] + 1, 
-        dp[i - 1][j - 1] + cost 
-      );
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
     }
   }
 
   return dp[m][n];
+}
+
+async function calculateMonthlyCompensation(args) {
+  const { employeeId, month, year } = args;
+
+  if (!employeeId || !month || !year) {
+    throw new Error("Employee ID, month, and year are required");
+  }
+
+  const formattedEmployeeId = String(employeeId);
+
+  const employee = await Employee.findByPk(formattedEmployeeId);
+  if (!employee) throw new Error("Employee not found");
+
+  const dailyRate = (parseFloat(employee.base_pay) + parseFloat(employee.other_pay || 0)) / 22;
+
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0); // Last day of the month
+
+  const formattedStartDate = startDate.toISOString().split("T")[0];
+  const formattedEndDate = endDate.toISOString().split("T")[0];
+
+  const leaves = await Leave.findAll({
+    where: {
+      employeeId: formattedEmployeeId,
+      date: { [Op.between]: [formattedStartDate, formattedEndDate] },
+    },
+  });
+
+  const casualLeaves = leaves.filter((leave) => leave.type.toLowerCase() === "casual");
+  const sickLeaves = leaves.filter((leave) => leave.type.toLowerCase() === "sick");
+
+  let deduction = 0;
+  const maxCasualLeaves = 3;
+  const maxSickLeaves = 3;
+
+  if (casualLeaves.length > maxCasualLeaves) {
+    deduction += dailyRate * (casualLeaves.length - maxCasualLeaves);
+  }
+
+  if (sickLeaves.length > maxSickLeaves) {
+    deduction += dailyRate * (sickLeaves.length - maxSickLeaves);
+  }
+
+  const totalCompensation =
+    parseFloat(employee.base_pay) + parseFloat(employee.other_pay || 0) - deduction;
+
+  return {
+    employeeId: employee.id,
+    name: `${employee.firstname} ${employee.lastname}`,
+    month: month,
+    year: year,
+    basePay: parseFloat(employee.base_pay),
+    otherPay: parseFloat(employee.other_pay || 0),
+    casualLeaveCount: casualLeaves.length,
+    sickLeaveCount: sickLeaves.length,
+    deduction: parseFloat(deduction.toFixed(2)),
+    totalCompensation: parseFloat(totalCompensation.toFixed(2)),
+  };
 }
 
 async function functionCalls(functionName, args) {
@@ -167,6 +224,8 @@ async function functionCalls(functionName, args) {
   else if (functionName === "updateDesignation") return await updateDesignation(args[0]);
   else if (functionName === "adjustSalary") return await adjustSalary(args[0]);
   else if (functionName === "searchEmployeesByName") return await searchEmployeesByName(args[0]);
+  else if (functionName === "calculateMonthlyCompensation")
+    return await calculateMonthlyCompensation(args[0]);
   else throw new Error("Invalid function name");
 }
 
