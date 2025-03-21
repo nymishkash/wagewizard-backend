@@ -110,7 +110,7 @@ const tools = [
           type: {
             type: "string",
             description:
-              "The type of leave being requested, such as 'sick', 'vacation', 'personal', 'maternity', etc.",
+              "The type of leave being requested, only two types are allowed, 'sick' and 'casual'",
           },
         },
         required: ["employeeId", "date", "type"],
@@ -241,6 +241,38 @@ const tools = [
           },
         },
         required: ["searchTerm"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "calculateMonthlyCompensation",
+      description:
+        "Calculate the monthly compensation for an employee, taking into account their base pay, other compensation, and any leave deductions for the specified month.",
+      parameters: {
+        type: "object",
+        properties: {
+          employeeId: {
+            type: "string",
+            description:
+              "The unique identifier of the employee whose monthly compensation should be calculated. This is typically a UUID.",
+          },
+          month: {
+            type: "integer",
+            description:
+              "The month for which to calculate compensation (1-12, where 1 is January).",
+            minimum: 1,
+            maximum: 12,
+          },
+          year: {
+            type: "integer",
+            description: "The year for which to calculate compensation (e.g., 2023).",
+            minimum: 2000,
+            maximum: 2100,
+          },
+        },
+        required: ["employeeId", "month", "year"],
       },
     },
   },
@@ -559,7 +591,6 @@ class OpenAIService {
       }
 
       return { response: responseMessage.content };
-
     } catch (error) {
       console.error("Error generating AI response:", error);
       await eventService.publish("response_v1", {
