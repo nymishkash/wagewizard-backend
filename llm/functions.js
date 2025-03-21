@@ -170,28 +170,26 @@ async function calculateMonthlyCompensation(args) {
   const monthlyBasePay = parseFloat(employee.base_pay) / 12;
   const monthlyOtherPay = parseFloat(employee.other_pay || 0) / 12;
   const monthlyTotalPay = monthlyBasePay + monthlyOtherPay;
-  
+
   // Assuming 22 working days per month
   const dailyRate = monthlyTotalPay / 22;
 
   // Get month start and end dates in YYYY-MM-DD format
-  const startDateStr = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const startDate = `${year}-${month.toString().padStart(2, "0")}-01`;
   const lastDay = new Date(year, month, 0).getDate();
-  const endDateStr = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
+  const endDate = `${year}-${month.toString().padStart(2, "0")}-${lastDay}`;
 
   // Query for leaves in the specified month
   const leaves = await Leave.findAll({
     where: {
       employeeId: formattedEmployeeId,
-      date: {
-        [Op.between]: [startDateStr, endDateStr]
-      }
-    }
+      date: { [Op.between]: [startDate, endDate] },
+    },
   });
 
   // Count leave types
-  const casualLeaves = leaves.filter((leave) => leave.type === 'casual').length;
-  const sickLeaves = leaves.filter((leave) => leave.type === 'sick').length;
+  const casualLeaves = leaves.filter((leave) => leave.type === "casual").length;
+  const sickLeaves = leaves.filter((leave) => leave.type === "sick").length;
 
   let deduction = 0;
   const maxCasualLeaves = 3;
