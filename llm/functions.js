@@ -156,8 +156,6 @@ function levenshteinDistance(str1, str2) {
 
 async function calculateMonthlyCompensation(args) {
   const { employeeId, month, year } = args;
-  const { Employee, Leave } = require("../models");
-  const { Op } = require("sequelize");
 
   if (!employeeId || !month || !year) {
     throw new Error("Employee ID, month, and year are required");
@@ -176,17 +174,17 @@ async function calculateMonthlyCompensation(args) {
   // Assuming 22 working days per month
   const dailyRate = monthlyTotalPay / 22;
 
-  // Create date range for the month
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0); // Last day of the month
+  // Get month start and end dates in YYYY-MM-DD format
+  const startDateStr = `${year}-${month.toString().padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDateStr = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`;
 
   // Query for leaves in the specified month
   const leaves = await Leave.findAll({
     where: {
       employeeId: formattedEmployeeId,
       date: {
-        [Op.gte]: startDate,
-        [Op.lte]: endDate
+        [Op.between]: [startDateStr, endDateStr]
       }
     }
   });
