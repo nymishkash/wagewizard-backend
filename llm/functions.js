@@ -156,6 +156,8 @@ function levenshteinDistance(str1, str2) {
 
 async function calculateMonthlyCompensation(args) {
   const { employeeId, month, year } = args;
+  const { Employee, Leave } = require("../models");
+  const { Op } = require("sequelize");
 
   if (!employeeId || !month || !year) {
     throw new Error("Employee ID, month, and year are required");
@@ -181,8 +183,8 @@ async function calculateMonthlyCompensation(args) {
     },
   });
 
-  const casualLeaves = leaves.filter((leave) => leave.type.toLowerCase() === "casual");
-  const sickLeaves = leaves.filter((leave) => leave.type.toLowerCase() === "sick");
+  const casualLeaves = leaves.filter((leave) => leave.type === 'casual');
+  const sickLeaves = leaves.filter((leave) => leave.type === 'sick');
 
   let deduction = 0;
   const maxCasualLeaves = 3;
