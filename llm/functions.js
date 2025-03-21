@@ -168,48 +168,56 @@ async function calculateMonthlyCompensation(args) {
   const employee = await Employee.findByPk(formattedEmployeeId);
   if (!employee) throw new Error("Employee not found");
 
-  const dailyRate = (parseFloat(employee.base_pay) + parseFloat(employee.other_pay || 0)) / 22;
+  // Calculate monthly rate from yearly compensation
+  const monthlyBasePay = parseFloat(employee.base_pay) / 12;
+  const monthlyOtherPay = parseFloat(employee.other_pay || 0) / 12;
+  const monthlyTotalPay = monthlyBasePay + monthlyOtherPay;
+  
+  // Assuming 22 working days per month
+  const dailyRate = monthlyTotalPay / 22;
 
+  // Create date range for the month
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0); // Last day of the month
 
-  const formattedStartDate = startDate.toISOString().split("T")[0];
-  const formattedEndDate = endDate.toISOString().split("T")[0];
-
+  // Query for leaves in the specified month
   const leaves = await Leave.findAll({
     where: {
       employeeId: formattedEmployeeId,
-      date: { [Op.between]: [formattedStartDate, formattedEndDate] },
-    },
+      date: {
+        [Op.gte]: startDate,
+        [Op.lte]: endDate
+      }
+    }
   });
 
-  const casualLeaves = leaves.filter((leave) => leave.type === 'casual');
-  const sickLeaves = leaves.filter((leave) => leave.type === 'sick');
+  // Count leave types
+  const casualLeaves = leaves.filter((leave) => leave.type === 'casual').length;
+  const sickLeaves = leaves.filter((leave) => leave.type === 'sick').length;
 
   let deduction = 0;
   const maxCasualLeaves = 3;
   const maxSickLeaves = 3;
 
-  if (casualLeaves.length > maxCasualLeaves) {
-    deduction += dailyRate * (casualLeaves.length - maxCasualLeaves);
+  if (casualLeaves > maxCasualLeaves) {
+    deduction += dailyRate * (casualLeaves - maxCasualLeaves);
   }
 
-  if (sickLeaves.length > maxSickLeaves) {
-    deduction += dailyRate * (sickLeaves.length - maxSickLeaves);
+  if (sickLeaves > maxSickLeaves) {
+    deduction += dailyRate * (sickLeaves - maxSickLeaves);
   }
 
-  const totalCompensation =
-    parseFloat(employee.base_pay) + parseFloat(employee.other_pay || 0) - deduction;
+  const totalCompensation = monthlyTotalPay - deduction;
 
   return {
     employeeId: employee.id,
     name: `${employee.firstname} ${employee.lastname}`,
     month: month,
     year: year,
-    basePay: parseFloat(employee.base_pay),
-    otherPay: parseFloat(employee.other_pay || 0),
-    casualLeaveCount: casualLeaves.length,
-    sickLeaveCount: sickLeaves.length,
+    basePay: parseFloat(monthlyBasePay.toFixed(2)),
+    otherPay: parseFloat(monthlyOtherPay.toFixed(2)),
+    casualLeaveCount: casualLeaves,
+    sickLeaveCount: sickLeaves,
     deduction: parseFloat(deduction.toFixed(2)),
     totalCompensation: parseFloat(totalCompensation.toFixed(2)),
   };
