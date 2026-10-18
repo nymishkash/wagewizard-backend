@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  DB_HOST: {{ .Release.Name }}-postgres
+  REDIS_HOST: {{ .Release.Name }}-redis
+  GIT_SHA: {{ .Values.image.tag | quote }}

@@ -1,5 +1,6 @@
 const express = require("express");
 const eventService = require("../config/redis");
+const { sseConnections } = require("../metrics");
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.get("/:conversationId", (req, res) => {
   res.flushHeaders();
 
   console.log(`Client connected for conversation ${conversationId}`);
+  sseConnections.inc();
 
   // init
   res.write(`data: ${JSON.stringify({ message: "Connection established" })}\n\n`);
@@ -22,8 +24,9 @@ router.get("/:conversationId", (req, res) => {
     res.write(`data: ${JSON.stringify({ eventType, data })}\n\n`);
   });
 
-  req.on("close", () => {
+  res.on("close", () => {
     subscriber.unsubscribe();
+    sseConnections.dec();
     console.log(`Connection closed for conversation ${conversationId}`);
   });
 });

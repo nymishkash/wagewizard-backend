@@ -1,0 +1,57 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-api
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-slo
+spec:
+  groups:
+    - name: wagewizard-slo
+      rules:
+        - alert: HighErrorRate
+          expr: sum(rate(http_requests_total{job="{{ .Release.Name }}-api",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="{{ .Release.Name }}-api"}[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: More than 1% of requests are failing with 5xx
+            action: Check the api pod logs and readyz, roll back with helm rollback if it started after a release
+        - alert: HighLatency
+          expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="{{ .Release.Name }}-api"}[5m]))) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: p95 latency is above 500ms
+            action: Check Postgres and OpenAI latency on the dashboard and pod CPU limits
+        - alert: APIPodsNotReady
+          expr: kube_deployment_status_replicas_available{deployment="{{ .Release.Name }}-api"} < kube_deployment_spec_replicas{deployment="{{ .Release.Name }}-api"}
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Some api pods are not ready
+            action: Run kubectl describe pod and check readyz for Postgres or Redis failures
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  wagewizard.json: |-
+{{ .Files.Get "dashboard.json" | indent 4 }}
+{{- end }}

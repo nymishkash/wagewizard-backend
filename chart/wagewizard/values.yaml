@@ -1,0 +1,37 @@
+image:
+  repository: ghcr.io/nymishkash/wagewizard-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicas: 2
+
+secretName: wagewizard-secrets
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+config:
+  PORT: "8081"
+  DB_PORT: "5432"
+  DB_NAME: wagewizard
+  DB_USER: wagewizard
+  DB_SYNC: "true"
+  REDIS_PORT: "6379"
+
+ingress:
+  host: wagewizard.localhost
+
+postgres:
+  image: postgres:16-alpine
+  storage: 1Gi
+
+redis:
+  image: redis:7-alpine
+
+monitoring:
+  enabled: true

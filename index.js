@@ -1,34 +1,19 @@
 require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const { sequelize, User, Message } = require("./models"); // Import both sequelize and User model
-const OpenAIService = require("./llm/openai");
+const app = require("./app");
+const { sequelize } = require("./models");
+const eventService = require("./config/redis");
 
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(cors());
-
-// Routes
-app.use("/auth", require("./routes/auth"));
-app.use("/conversations", require("./routes/conversation"));
-app.use("/sse/", require("./routes/sse"));
-app.use("/employees/", require("./routes/employee"));
-
-// Database initialization and server start
 const PORT = process.env.PORT || 8081;
 
 async function initdb() {
   try {
-    // Check database connection
     await sequelize.authenticate();
     console.log("Database connection established successfully.");
 
-    // Sync all models
-    // await sequelize.sync({ force: true, alter: true });
-    // console.log("Database tables synchronized.");
-
+    if (process.env.DB_SYNC === "true") {
+      await sequelize.sync();
+      console.log("Database tables synchronized.");
+    }
   } catch (error) {
     console.error("Database initialization error:", error);
     throw error;
@@ -37,12 +22,21 @@ async function initdb() {
 
 async function startServer() {
   try {
-    // Initialize database
     await initdb();
 
-    // Start server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+    });
+
+    process.on("SIGTERM", () => {
+      console.log("SIGTERM received, shutting down");
+      server.close(async () => {
+        await sequelize.close();
+        eventService.client.disconnect();
+        process.exit(0);
+      });
+      server.closeIdleConnections();
+      setTimeout(() => process.exit(0), 10000).unref();
     });
   } catch (error) {
     console.error("Failed to start server:", error);
@@ -51,5 +45,3 @@ async function startServer() {
 }
 
 startServer();
-
-module.exports = app;
