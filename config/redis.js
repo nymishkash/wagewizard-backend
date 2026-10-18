@@ -1,8 +1,9 @@
 const Redis = require("ioredis");
 
 const redisClient = new Redis({
-    host: "127.0.0.1",
-    port: 6379,
+    host: process.env.REDIS_HOST || "127.0.0.1",
+    port: Number(process.env.REDIS_PORT) || 6379,
+    lazyConnect: true,
     retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
@@ -19,6 +20,8 @@ redisClient.on("connect", () => {
 const CHANNEL_NAME = "ww_events";
 
 const eventService = {
+    client: redisClient,
+
     publish: async (eventType, data) => {
         try {
             const message = JSON.stringify({ eventType, data });
